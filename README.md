@@ -25,7 +25,7 @@ Various external libraries are used in order for this plugin to build:
 Installation
 --------------
 
-1. 
+1. \ 
 ```bash
 $ make && make install
 ```
