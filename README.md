@@ -25,10 +25,10 @@ Various external libraries are used in order for this plugin to build:
 Installation
 --------------
 
-1. \ 
-```bash
-$ make && make install
-```
+1.        
+        ```bash
+        $ make && make install
+        ```
 
 2. Create a lua script at the install directory called 'autorespond.lua'
 
