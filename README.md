@@ -1,5 +1,5 @@
-libpurple\_autoresponse
-=========
+# libpurple\_autoresponse
+------
 
 This is a straightforward plugin for Pidgin (tested in libpurple 2.10.6) that listens to each message recieved by every enabled account.  Once it recieves a message, it passes its metadata to a function in a lua script for processing.  Metadata passed in includes:
 
@@ -25,7 +25,9 @@ Various external libraries are used in order for this plugin to build:
 Installation
 --------------
 
-1. make && make install
+1. ```bash
+$ make && make install
+```
 2. Create a lua script at the install directory called 'autorespond.lua'
 
 License
