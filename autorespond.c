@@ -106,114 +106,114 @@ void run_lua(PurpleConversation *conv, msg_metadata_t msg)
 }
 
 static void received_im_msg_cb(PurpleAccount *account, char *who, char *buffer, PurpleConversation *conv, PurpleMessageFlags flags, void *data) {
-	if (conv == NULL) conv = purple_conversation_new(PURPLE_CONV_TYPE_IM, account, who); //* A workaround to avoid skipping of the first message as a result on NULL-conv: */
-	PurpleBuddy *buddy = purple_find_buddy(account, who);
-	PurplePresence *presence = purple_buddy_get_presence(buddy);
-        msg_metadata_t msg;
+    if (conv == NULL) conv = purple_conversation_new(PURPLE_CONV_TYPE_IM, account, who); //* A workaround to avoid skipping of the first message as a result on NULL-conv: */
+    PurpleBuddy *buddy = purple_find_buddy(account, who);
+    PurplePresence *presence = purple_buddy_get_presence(buddy);
+    msg_metadata_t msg;
 
-	//Get message
-	msg.text = purple_markup_strip_html(buffer);
-        msg.remote_username = who;
+    //Get message
+    msg.text = purple_markup_strip_html(buffer);
+    msg.remote_username = who;
 
-	//LOCAL USER:
-	msg.local_alias = purple_account_get_alias(account);
-	msg.local_username = (char *) purple_account_get_name_for_display(account);
+    //LOCAL USER:
+    msg.local_alias = purple_account_get_alias(account);
+    msg.local_username = (char *) purple_account_get_name_for_display(account);
 
-	//REMOTE USER (Buddy):
+    //REMOTE USER (Buddy):
+    //Get buddy alias
+    msg.remote_alias = purple_buddy_get_alias(buddy);
+    if(msg.remote_alias == NULL) msg.remote_alias = "";
 
-	//Get buddy alias
-	msg.remote_alias = purple_buddy_get_alias(buddy);
-	if(msg.remote_alias == NULL) msg.remote_alias = "";
+    //Get buddy group
+    PurpleGroup *group = purple_buddy_get_group(buddy);
+    msg.remote_from_group = group != NULL ? purple_group_get_name(group) : ""; //return empty string if not in group
 
-	//Get buddy group
-	PurpleGroup *group = purple_buddy_get_group(buddy);
-	msg.remote_from_group = group != NULL ? purple_group_get_name(group) : ""; //return empty string if not in group
+    //Get protocol ID
+    msg.protocol_id = purple_account_get_protocol_id(account);
+    if(!strncmp(msg.protocol_id,PROTOCOL_PREFIX,strlen(PROTOCOL_PREFIX))) msg.protocol_id += strlen(PROTOCOL_PREFIX); //trim out PROTOCOL_PREFIX (eg.: "prpl-irc" => "irc")
 
-	//Get protocol ID
-	msg.protocol_id = purple_account_get_protocol_id(account);
-	if(!strncmp(msg.protocol_id,PROTOCOL_PREFIX,strlen(PROTOCOL_PREFIX))) msg.protocol_id += strlen(PROTOCOL_PREFIX); //trim out PROTOCOL_PREFIX (eg.: "prpl-irc" => "irc")
+    //Get status
+    PurpleStatus *status = purple_account_get_active_status(account);
+    PurpleStatusType *type = purple_status_get_type(status);
+    //remote
+    PurpleStatus *r_status = purple_presence_get_active_status(presence);
+    PurpleStatusType *r_status_type =	purple_status_get_type(r_status);
 
-	//Get status
-	PurpleStatus *status = purple_account_get_active_status(account);
-	PurpleStatusType *type = purple_status_get_type(status);
-	//remote
-	PurpleStatus *r_status = purple_presence_get_active_status(presence);
-	PurpleStatusType *r_status_type =	purple_status_get_type(r_status);
+    //Get status id
+    msg.local_status_id = NULL;
+    msg.local_status_id = purple_primitive_get_id_from_type(purple_status_type_get_primitive(type));
+    //remote
+    msg.remote_status_id = NULL;
+    msg.remote_status_id = purple_primitive_get_id_from_type(purple_status_type_get_primitive(r_status_type));
 
-	//Get status id
-	msg.local_status_id = NULL;
-	msg.local_status_id = purple_primitive_get_id_from_type(purple_status_type_get_primitive(type));
-	//remote
-	msg.remote_status_id = NULL;
-	msg.remote_status_id = purple_primitive_get_id_from_type(purple_status_type_get_primitive(r_status_type));
-
-	//Get status message
-	msg.local_status_msg = NULL;
-	if (purple_status_type_get_attr(type, "message") != NULL) {
-		msg.local_status_msg = purple_status_get_attr_string(status, "message");
-	} else {
+    //Get status message
+    msg.local_status_msg = NULL;
+    if (purple_status_type_get_attr(type, "message") != NULL) {
+        msg.local_status_msg = purple_status_get_attr_string(status, "message");
+    } else {
         PurpleSavedStatus *savedstatus = purple_savedstatus_get_current();
         if(savedstatus)
             msg.local_status_msg = purple_savedstatus_get_message(savedstatus);
-	}
-	//remote
-	msg.remote_status_msg = NULL;
-	if (purple_status_type_get_attr(r_status_type, "message") != NULL) {
-		msg.remote_status_msg = purple_status_get_attr_string(r_status, "message");
-	} else {
-		msg.remote_status_msg = "";
-	}
+    }
+    //remote
+    msg.remote_status_msg = NULL;
+    if (purple_status_type_get_attr(r_status_type, "message") != NULL) {
+        msg.remote_status_msg = purple_status_get_attr_string(r_status, "message");
+    } else {
+        msg.remote_status_msg = "";
+    }
 
     run_lua(conv, msg);
 }
 
 static gboolean plugin_load(PurplePlugin * plugin) {
-	asprintf(&hook_script,"%s/%s",purple_user_dir(),AUTORESPOND);
-	void *conv_handle = purple_conversations_get_handle();
-	purple_signal_connect(conv_handle, "received-im-msg", plugin, PURPLE_CALLBACK(received_im_msg_cb), NULL);
-	return TRUE;
+    asprintf(&hook_script,"%s/%s",purple_user_dir(),AUTORESPOND);
+    void *conv_handle = purple_conversations_get_handle();
+    purple_signal_connect(conv_handle, "received-im-msg", plugin, PURPLE_CALLBACK(received_im_msg_cb), NULL);
+    return TRUE;
 }
 
 static gboolean plugin_unload(PurplePlugin * plugin) {
-	free(hook_script);
-	return TRUE;
+    free(hook_script);
+    return TRUE;
 }
 
 static PurplePluginInfo info = {
-	PURPLE_PLUGIN_MAGIC,
-	PURPLE_MAJOR_VERSION,
-	PURPLE_MINOR_VERSION,
-	PURPLE_PLUGIN_STANDARD,
-	NULL,
-	0,
-	NULL,
-	PURPLE_PRIORITY_DEFAULT,
+    PURPLE_PLUGIN_MAGIC,
+    PURPLE_MAJOR_VERSION,
+    PURPLE_MINOR_VERSION,
+    PURPLE_PLUGIN_STANDARD,
+    NULL,
+    0,
+    NULL,
+    PURPLE_PRIORITY_DEFAULT,
 
-	"core-autorespond",
-	"Autorespond",
-	"0.1.0",
-	"Framework for hooking scripts to process received messages for libpurple clients",
-	"\nThis plugin will execute the lua script in \"~/.purple/" PLUGIN_LUA "\" "
-		" and respond back with the string returned from the function autorespond(msg).\n"
-		" Inspired by the answerscripts plugin for pidgin.\n"
-		"\n",
-	"Bret Lowrey",
-	"http://github.com/lowrey/libpurple_autorespond",
+    "core-autorespond",
+    "Autorespond",
+    "0.1.0",
+    "Framework for hooking scripts to process received messages for libpurple clients",
+    "\nThis plugin will execute the lua script in \"~/.purple/" PLUGIN_LUA "\" "
+        " and respond back with the string returned from the function autorespond(msg).\n"
+        " Inspired by the answerscripts plugin for pidgin.\n"
+        "\n",
+    "Bret Lowrey",
+    "http://github.com/lowrey/libpurple_autorespond",
 
-	plugin_load,
-	plugin_unload,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL
+    plugin_load,
+    plugin_unload,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL
 };
 
 static void init_plugin(PurplePlugin * plugin) {
 }
 
 PURPLE_INIT_PLUGIN(autorespond, init_plugin, info)
+
