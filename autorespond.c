@@ -109,11 +109,11 @@ static void received_im_msg_cb(PurpleAccount *account, char *who, char *buffer, 
 	if (conv == NULL) conv = purple_conversation_new(PURPLE_CONV_TYPE_IM, account, who); //* A workaround to avoid skipping of the first message as a result on NULL-conv: */
 	PurpleBuddy *buddy = purple_find_buddy(account, who);
 	PurplePresence *presence = purple_buddy_get_presence(buddy);
-    msg_metadata_t msg;
+        msg_metadata_t msg;
 
 	//Get message
 	msg.text = purple_markup_strip_html(buffer);
-    msg.remote_username = who;
+        msg.remote_username = who;
 
 	//LOCAL USER:
 	msg.local_alias = purple_account_get_alias(account);
