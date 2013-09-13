@@ -57,8 +57,7 @@ void push_val_to_lua_t(lua_State *L, const char *key, const char *val)
 
 void run_lua(PurpleConversation *conv, msg_metadata_t msg)
 {
-    lua_State *L;
-
+    lua_State *L; 
     L = luaL_newstate(); 
     luaL_openlibs(L);  
     char lua_path[50];
@@ -91,8 +90,7 @@ void run_lua(PurpleConversation *conv, msg_metadata_t msg)
     push_val_to_lua_t(L, "local_status_id", msg.local_status_id);
     push_val_to_lua_t(L, "local_status_msg", msg.local_status_msg);
 
-    //lua_pushstring(L, msg.text);
-    if (lua_pcall(L, 1, 1, 0))                  /* Run function, !!! NRETURN=1 !!! */
+    if (lua_pcall(L, 1, 1, 0)) /* Run function, !!! NRETURN=1 !!! */
     {
         lua_close(L);
         return;
@@ -105,8 +103,11 @@ void run_lua(PurpleConversation *conv, msg_metadata_t msg)
     lua_close(L); 
 }
 
-static void received_im_msg_cb(PurpleAccount *account, char *who, char *buffer, PurpleConversation *conv, PurpleMessageFlags flags, void *data) {
-    if (conv == NULL) conv = purple_conversation_new(PURPLE_CONV_TYPE_IM, account, who); //* A workaround to avoid skipping of the first message as a result on NULL-conv: */
+static void received_im_msg_cb(PurpleAccount *account, char *who, char *buffer,
+    PurpleConversation *conv, PurpleMessageFlags flags, void *data) {
+    // A workaround to avoid skipping of the first message as a result on NULL-conv:
+    if (conv == NULL) conv = purple_conversation_new(PURPLE_CONV_TYPE_IM,
+        account, who); 
     PurpleBuddy *buddy = purple_find_buddy(account, who);
     PurplePresence *presence = purple_buddy_get_presence(buddy);
     msg_metadata_t msg;
@@ -126,11 +127,14 @@ static void received_im_msg_cb(PurpleAccount *account, char *who, char *buffer, 
 
     //Get buddy group
     PurpleGroup *group = purple_buddy_get_group(buddy);
-    msg.remote_from_group = group != NULL ? purple_group_get_name(group) : ""; //return empty string if not in group
+    //return empty string if not in group
+    msg.remote_from_group = group != NULL ? purple_group_get_name(group) : ""; 
 
     //Get protocol ID
     msg.protocol_id = purple_account_get_protocol_id(account);
-    if(!strncmp(msg.protocol_id,PROTOCOL_PREFIX,strlen(PROTOCOL_PREFIX))) msg.protocol_id += strlen(PROTOCOL_PREFIX); //trim out PROTOCOL_PREFIX (eg.: "prpl-irc" => "irc")
+    //trim out PROTOCOL_PREFIX (eg.: "prpl-irc" => "irc")
+    if(!strncmp(msg.protocol_id,PROTOCOL_PREFIX,strlen(PROTOCOL_PREFIX))) 
+        msg.protocol_id += strlen(PROTOCOL_PREFIX); 
 
     //Get status
     PurpleStatus *status = purple_account_get_active_status(account);
@@ -141,10 +145,12 @@ static void received_im_msg_cb(PurpleAccount *account, char *who, char *buffer, 
 
     //Get status id
     msg.local_status_id = NULL;
-    msg.local_status_id = purple_primitive_get_id_from_type(purple_status_type_get_primitive(type));
+    msg.local_status_id = purple_primitive_get_id_from_type(
+        purple_status_type_get_primitive(type));
     //remote
     msg.remote_status_id = NULL;
-    msg.remote_status_id = purple_primitive_get_id_from_type(purple_status_type_get_primitive(r_status_type));
+    msg.remote_status_id = purple_primitive_get_id_from_type(
+        purple_status_type_get_primitive(r_status_type));
 
     //Get status message
     msg.local_status_msg = NULL;
@@ -167,9 +173,10 @@ static void received_im_msg_cb(PurpleAccount *account, char *who, char *buffer, 
 }
 
 static gboolean plugin_load(PurplePlugin * plugin) {
-    asprintf(&hook_script,"%s/%s",purple_user_dir(),AUTORESPOND);
+    asprintf(&hook_script, "%s/%s", purple_user_dir(), AUTORESPOND);
     void *conv_handle = purple_conversations_get_handle();
-    purple_signal_connect(conv_handle, "received-im-msg", plugin, PURPLE_CALLBACK(received_im_msg_cb), NULL);
+    purple_signal_connect(conv_handle, "received-im-msg", plugin, 
+        PURPLE_CALLBACK(received_im_msg_cb), NULL);
     return TRUE;
 }
 
@@ -216,4 +223,3 @@ static void init_plugin(PurplePlugin * plugin) {
 }
 
 PURPLE_INIT_PLUGIN(autorespond, init_plugin, info)
-
